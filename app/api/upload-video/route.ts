@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
     // Update the Firestore document with video ID
     await firestore.doc(`videos/${documentId}`).update({
       videoId,
+      thumbnail: `https://vz-461ca7ac-0e6.b-cdn.net/${videoId}/thumbnail.jpg`,
       isSuccessful: false,
       videoUploaded: true,
     });
