@@ -80,6 +80,7 @@ export async function POST(req: NextRequest) {
     await firestore.doc(`videos/${documentId}`).update({
       videoId,
       isSuccessful: false,
+      videoUploaded: true,
     });
 
     // Clean up temp files
