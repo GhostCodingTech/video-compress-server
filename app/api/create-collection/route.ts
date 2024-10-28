@@ -1,18 +1,16 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const libraryId = searchParams.get('libraryId');
+  const uniqueId = searchParams.get('uniqueId');
+
+  if (!libraryId || !uniqueId) {
+    return NextResponse.json({ error: 'Missing libraryId or uniqueId parameter' }, { status: 400 });
   }
 
   try {
-    const { libraryId, uniqueId } = req.query;
-
-    if (!libraryId || !uniqueId) {
-      return res.status(400).json({ error: 'Missing libraryId or uniqueId parameter' });
-    }
-
     // Make a POST request to Bunny CDN to create a new collection
     const response = await axios.post(
       `https://video.bunnycdn.com/library/${libraryId}/collections`,
@@ -20,16 +18,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       {
         headers: {
           'Content-Type': 'application/json',
-          AccessKey: process.env.BUNNY_API_KEY!, // Replace with your Bunny CDN API Key from environment variables
+          AccessKey: process.env.BUNNY_API_KEY!, // Ensure this environment variable is set
         },
       }
     );
 
     const collectionId = response.data.guid;
 
-    return res.status(200).json({ collectionId });
+    return NextResponse.json({ collectionId }, { status: 200 });
   } catch (error) {
     console.error('Error creating collection:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
