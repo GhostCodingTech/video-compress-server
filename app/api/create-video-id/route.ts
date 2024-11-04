@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   const collectionId = searchParams.get('collectionId');
   const uniqueId = searchParams.get('uniqueId');
 
-  if (!libraryId || !uniqueId) {
+  if (!libraryId || !uniqueId || !collectionId) {
     return NextResponse.json({ error: 'Missing libraryId or uniqueId parameter' }, { status: 400 });
   }
 
