@@ -30,15 +30,14 @@ export async function POST(req: NextRequest) {
 
       const doc = snapshot.docs[0];
       if (Status === 3) {
-        
-        await doc.ref.update({ isDraft: false});
+        await doc.ref.update({ isDraft: false });
       } else if (Status === 5) {
         await doc.ref.update({ uploadFailed: true });
       }
 
       return NextResponse.json({ message: 'Update successful' }, { status: 200 });
     } else {
-      return NextResponse.json({ message: 'No action taken' }, { status: 205 });
+      return NextResponse.json({ message: 'No action taken' }, { status: 200 });  // Changed 205 to 200
     }
   } catch (error) {
     console.error("Webhook error:", error);
