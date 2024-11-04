@@ -30,15 +30,15 @@ export async function POST(req: NextRequest) {
 
       const doc = snapshot.docs[0];
       if (Status === 3) {
-        const videoUrl = `https://vz-461ca7ac-0e6.b-cdn.net/${VideoGuid}/playlist.m3u8`;
-        await doc.ref.update({ isDraft: false, videoUrl: videoUrl });
+        
+        await doc.ref.update({ isDraft: false});
       } else if (Status === 5) {
         await doc.ref.update({ uploadFailed: true });
       }
 
-      return NextResponse.json({ message: 'Update successful' });
+      return NextResponse.json({ message: 'Update successful' }, { status: 200 });
     } else {
-      return NextResponse.json({ message: 'No action taken' });
+      return NextResponse.json({ message: 'No action taken' }, { status: 205 });
     }
   } catch (error) {
     console.error("Webhook error:", error);
