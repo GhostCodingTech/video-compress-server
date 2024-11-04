@@ -1,65 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
+import axios from 'axios';
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const libraryId = searchParams.get('libraryId');
+  const collectionId = searchParams.get('collectionId');
+  const uniqueId = searchParams.get('uniqueId');
+
+  if (!libraryId || !uniqueId) {
+    return NextResponse.json({ error: 'Missing libraryId or uniqueId parameter' }, { status: 400 });
+  }
+
   try {
-    let libraryId, collectionId, videoName;
-
-    const contentType = req.headers.get('content-type');
-    console.log("Content-Type:", contentType);
-
-    if (contentType && contentType.includes('application/x-www-form-urlencoded')) {
-      const formData = await req.text();
-      const params = new URLSearchParams(formData);
-      libraryId = params.get('libraryId') || '';
-      collectionId = params.get('collectionId') || '';
-      videoName = params.get('videoName') || '';
-    } else if (contentType === 'application/json') {
-      const json = await req.json();
-      libraryId = json.libraryId;
-      collectionId = json.collectionId;
-      videoName = json.videoName;
-    } else {
-      console.error("Unsupported Content-Type:", contentType);
-      return NextResponse.json({ error: 'Unsupported content type' }, { status: 415 });
-    }
-
-    if (!libraryId || !collectionId || !videoName) {
-      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
-    }
-
-    const headers = new Headers();
-    headers.append('Content-Type', 'application/json');
-    headers.append('AccessKey', process.env.BUNNY_API_KEY || '');
-
-    const response = await fetch(`https://video.bunnycdn.com/library/${libraryId}/collections/${collectionId}/videos`, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify({ title: videoName }),
-    });
-
-    // Log the entire raw response for debugging
-    console.log("Response Status:", response.status);
-    console.log("Response Headers:", Array.from(response.headers.entries()));
-
-    // Handle cases where the response might not be JSON
-    let responseData;
-    if (response.ok) {
-      try {
-        responseData = await response.json();
-      } catch (jsonError) {
-        console.error("Error parsing JSON:", jsonError);
-        return NextResponse.json({ error: 'Invalid JSON response from Bunny' }, { status: 500 });
+    // Make a POST request to Bunny CDN to create a new video in the collection
+    const response = await axios.post(
+      `https://video.bunnycdn.com/library/${libraryId}/collections/${collectionId}/videos`,
+      { title: uniqueId },  // Use uniqueId as the video title
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          AccessKey: process.env.BUNNY_API_KEY, // Ensure this environment variable is set
+        },
       }
-    } else {
-      const errorText = await response.text();
-      console.error("Error Response Text:", errorText);
-      return NextResponse.json({ error: 'Failed to create video in Bunny', details: errorText }, { status: response.status });
-    }
+    );
 
-    const videoGuid = responseData.guid;
-    return NextResponse.json({ videoGuid });
+    const videoguid = response.data.guid;
+
+    return NextResponse.json({ videoguid }, { status: 200 });
   } catch (error) {
-    console.error("Internal Server Error:", error);
+    console.error('Error creating video:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
