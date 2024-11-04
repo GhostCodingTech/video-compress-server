@@ -13,11 +13,16 @@ export async function POST(req: NextRequest) {
       collectionId = params.get('collectionId') || '';
       videoName = params.get('videoName') || '';
     } else {
-      // Parse JSON data (as fallback)
-      const json = await req.json();
-      libraryId = json.libraryId;
-      collectionId = json.collectionId;
-      videoName = json.videoName;
+      // Parse JSON data (as fallback) only if content type is application/json
+      if (req.headers.get('content-type') === 'application/json') {
+        const json = await req.json();
+        libraryId = json.libraryId;
+        collectionId = json.collectionId;
+        videoName = json.videoName;
+      } else {
+        // Unsupported content type
+        return NextResponse.json({ error: 'Unsupported content type' }, { status: 415 });
+      }
     }
 
     // Validate parameters
