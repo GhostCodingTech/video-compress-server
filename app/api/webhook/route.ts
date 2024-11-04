@@ -4,25 +4,37 @@ import { getFirestore } from 'firebase-admin/firestore';
 export async function POST(req: NextRequest) {
   try {
     const firestore = getFirestore();
-    const { videoId, videoUrl } = await req.json();
+    const { VideoGuid, Status } = await req.json();
 
-    if (!videoId || !videoUrl) {
+    if (!VideoGuid || typeof Status !== 'number') {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
 
-    // Find the document with the matching videoId
-    const videoDocRef = firestore.collection('videos').where('videoId', '==', videoId).limit(1);
-    const videoDocSnapshot = await videoDocRef.get();
+    if (Status === 3 || Status === 5) {
+      // Find the document with the matching VideoGuid
+      const videosRef = firestore.collection('videos').where('videoguid', '==', VideoGuid).limit(1);
+      const snapshot = await videosRef.get();
 
-    if (!videoDocSnapshot.empty) {
-      const doc = videoDocSnapshot.docs[0];
-      await doc.ref.update({
-        videoUrl,
-        isSuccessful: true,
-      });
+      if (snapshot.empty) {
+        return NextResponse.json({ error: 'No matching document found' }, { status: 404 });
+      }
+
+      const doc = snapshot.docs[0];
+
+      if (Status === 3) {
+        // Update with video URL if Status is 3
+        const videoUrl = `https://vz-461ca7ac-0e6.b-cdn.net/${VideoGuid}/playlist.m3u8`;
+        await doc.ref.update({ isDraft: false, videoUrl });
+      } else if (Status === 5) {
+        // Mark as upload failed if Status is 5
+        await doc.ref.update({ uploadFailed: true });
+      }
+
+      return NextResponse.json({ message: 'Update successful' });
     }
 
-    return NextResponse.json({ success: true });
+    // If no action is needed, return success
+    return NextResponse.json({ message: 'No action taken' });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
