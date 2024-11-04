@@ -4,25 +4,28 @@ export async function POST(req: NextRequest) {
   try {
     let libraryId, collectionId, videoName;
 
+    // Log the content type to confirm what type of request is being sent
+    const contentType = req.headers.get('content-type');
+    console.log("Content-Type:", contentType);
+
     // Check if the content type is x-www-form-urlencoded
-    if (req.headers.get('content-type') === 'application/x-www-form-urlencoded') {
+    if (contentType === 'application/x-www-form-urlencoded') {
       // Parse x-www-form-urlencoded data
       const formData = await req.text();
       const params = new URLSearchParams(formData);
       libraryId = params.get('libraryId') || '';
       collectionId = params.get('collectionId') || '';
       videoName = params.get('videoName') || '';
+    } else if (contentType === 'application/json') {
+      // Parse JSON data
+      const json = await req.json();
+      libraryId = json.libraryId;
+      collectionId = json.collectionId;
+      videoName = json.videoName;
     } else {
-      // Parse JSON data (as fallback) only if content type is application/json
-      if (req.headers.get('content-type') === 'application/json') {
-        const json = await req.json();
-        libraryId = json.libraryId;
-        collectionId = json.collectionId;
-        videoName = json.videoName;
-      } else {
-        // Unsupported content type
-        return NextResponse.json({ error: 'Unsupported content type' }, { status: 415 });
-      }
+      // Unsupported content type
+      console.error("Unsupported Content-Type:", contentType);
+      return NextResponse.json({ error: 'Unsupported content type' }, { status: 415 });
     }
 
     // Validate parameters
