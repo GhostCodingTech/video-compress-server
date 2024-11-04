@@ -4,12 +4,11 @@ export async function POST(req: NextRequest) {
   try {
     let libraryId, collectionId, videoName;
 
-    // Log the content type to confirm what type of request is being sent
+    // Check if the content type includes x-www-form-urlencoded
     const contentType = req.headers.get('content-type');
     console.log("Content-Type:", contentType);
 
-    // Check if the content type is x-www-form-urlencoded
-    if (contentType === 'application/x-www-form-urlencoded') {
+    if (contentType && contentType.includes('application/x-www-form-urlencoded')) {
       // Parse x-www-form-urlencoded data
       const formData = await req.text();
       const params = new URLSearchParams(formData);
