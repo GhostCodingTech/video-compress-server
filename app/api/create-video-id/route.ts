@@ -2,12 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
-    // Extract query parameters
-    const { searchParams } = new URL(req.url);
-    const libraryId = searchParams.get('libraryId');
-    const collectionId = searchParams.get('collectionId');
-    const videoName = searchParams.get('videoName');
+    let libraryId, collectionId, videoName;
 
+    // Check if the content type is x-www-form-urlencoded
+    if (req.headers.get('content-type') === 'application/x-www-form-urlencoded') {
+      // Parse x-www-form-urlencoded data
+      const formData = await req.text();
+      const params = new URLSearchParams(formData);
+      libraryId = params.get('libraryId') || '';
+      collectionId = params.get('collectionId') || '';
+      videoName = params.get('videoName') || '';
+    } else {
+      // Parse JSON data (as fallback)
+      const json = await req.json();
+      libraryId = json.libraryId;
+      collectionId = json.collectionId;
+      videoName = json.videoName;
+    }
+
+    // Validate parameters
     if (!libraryId || !collectionId || !videoName) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
@@ -21,12 +34,13 @@ export async function POST(req: NextRequest) {
     const response = await fetch(`https://video.bunnycdn.com/library/${libraryId}/collections/${collectionId}/videos`, {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify({
-        title: videoName,  // Name of the video
-      }),
+      body: JSON.stringify({ title: videoName }),
     });
 
-    // Handle response status and parse JSON only if available
+    // Log response status and headers for debugging
+    console.log("Response Status:", response.status);
+    console.log("Response Headers:", Array.from(response.headers.entries()));
+
     if (!response.ok) {
       let errorData = { message: 'Unknown error' };
       try {
@@ -37,7 +51,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create video in Bunny', details: errorData }, { status: response.status });
     }
 
-    // Attempt to parse JSON if response body exists
+    // Attempt to parse JSON response
     let responseData;
     try {
       responseData = await response.json();
@@ -46,8 +60,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON response from Bunny' }, { status: 500 });
     }
 
-    const videoGuid = responseData.guid;  // Extract the generated video GUID
-
+    const videoGuid = responseData.guid;
     return NextResponse.json({ videoGuid });
   } catch (error) {
     console.error("Internal Server Error:", error);
