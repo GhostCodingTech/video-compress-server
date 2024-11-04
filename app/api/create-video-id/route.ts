@@ -14,8 +14,10 @@ export async function GET(req: NextRequest) {
   try {
     // Make a POST request to Bunny CDN to create a new video in the collection
     const response = await axios.post(
-      `https://video.bunnycdn.com/library/${libraryId}/collections/${collectionId}/videos`,
-      { title: uniqueId },  // Use uniqueId as the video title
+      `https://video.bunnycdn.com/library/${libraryId}/videos`,
+      { title: uniqueId,
+        collectionId: collectionId
+       },  // Use uniqueId as the video title
       {
         headers: {
           'Content-Type': 'application/json',
