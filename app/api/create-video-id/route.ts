@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
-    const { libraryId, collectionId, videoName } = await req.json();
+    // Extract query parameters
+    const { searchParams } = new URL(req.url);
+    const libraryId = searchParams.get('libraryId');
+    const collectionId = searchParams.get('collectionId');
+    const videoName = searchParams.get('videoName');
 
     if (!libraryId || !collectionId || !videoName) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
@@ -22,18 +26,31 @@ export async function POST(req: NextRequest) {
       }),
     });
 
-    // Handle the Bunny API response
+    // Handle response status and parse JSON only if available
     if (!response.ok) {
-      const errorData = await response.json();
+      let errorData = { message: 'Unknown error' };
+      try {
+        errorData = await response.json();
+      } catch (jsonError) {
+        console.error("Error parsing JSON:", jsonError);
+      }
       return NextResponse.json({ error: 'Failed to create video in Bunny', details: errorData }, { status: response.status });
     }
 
-    const responseData = await response.json();
+    // Attempt to parse JSON if response body exists
+    let responseData;
+    try {
+      responseData = await response.json();
+    } catch (jsonError) {
+      console.error("Error parsing JSON:", jsonError);
+      return NextResponse.json({ error: 'Invalid JSON response from Bunny' }, { status: 500 });
+    }
+
     const videoGuid = responseData.guid;  // Extract the generated video GUID
 
     return NextResponse.json({ videoGuid });
   } catch (error) {
-    console.error(error);
+    console.error("Internal Server Error:", error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
